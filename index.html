@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ব্লগার ইউআরএল শর্টনার</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="card">
+    <h1>ব্লগার ইউআরএল শর্টনার</h1>
+    <p class="muted">তোমার বড় লিংক বসাও, ছোট লিংক পেয়ে যাও!</p>
+
+    <form id="shortenForm">
+      <label>আসল লিংক</label>
+      <input id="longUrl" type="url" placeholder="https://example.com" required>
+
+      <label>কাস্টম নাম (ঐচ্ছিক)</label>
+      <input id="custom" type="text" placeholder="যেমন: amarblog" maxlength="30" pattern="[A-Za-z0-9-_]{3,30}">
+
+      <button type="submit">লিংক ছোট করো</button>
+    </form>
+
+    <div id="result" class="hidden">
+      <p>তোমার ছোট লিংক:</p>
+      <a id="shortLink" href="#" target="_blank"></a>
+    </div>
+
+    <div id="error" class="error hidden"></div>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+    import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCyZImg-Uh79qppoJjyr3WIkCqPaE4MFFc",
+      authDomain: "turty-2f096.firebaseapp.com",
+      projectId: "turty-2f096",
+      storageBucket: "turty-2f096.firebasestorage.app",
+      messagingSenderId: "292943379883",
+      appId: "1:292943379883:web:c9ac1161226993b90b66ee",
+      databaseURL: "https://mimtyllb-default-rtdb.firebaseio.com/"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const form = document.getElementById("shortenForm");
+    const longUrlInput = document.getElementById("longUrl");
+    const customInput = document.getElementById("custom");
+    const resultDiv = document.getElementById("result");
+    const shortLinkA = document.getElementById("shortLink");
+    const errorDiv = document.getElementById("error");
+
+    function randomCode(len = 6) {
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+      return Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+    }
+
+    async function exists(short) {
+      const snapshot = await get(child(ref(db), "urls/" + short));
+      return snapshot.exists();
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      errorDiv.classList.add("hidden");
+      resultDiv.classList.add("hidden");
+
+      let longUrl = longUrlInput.value.trim();
+      if (!/^https?:\/\//i.test(longUrl)) longUrl = "https://" + longUrl;
+
+      let short = customInput.value.trim();
+      if (!short) {
+        do { short = randomCode(); } while (await exists(short));
+      } else {
+        if (await exists(short)) {
+          errorDiv.textContent = "এই নামটি আগেই নেওয়া হয়েছে!";
+          errorDiv.classList.remove("hidden");
+          return;
+        }
+      }
+
+      await set(ref(db, "urls/" + short), {
+        longUrl: longUrl,
+        createdAt: Date.now()
+      });
+
+      const shortUrl = `${location.origin}/redirect.html?id=${short}`;
+      shortLinkA.href = shortUrl;
+      shortLinkA.textContent = shortUrl;
+      resultDiv.classList.remove("hidden");
+    });
+  </script>
+</body>
+</html>

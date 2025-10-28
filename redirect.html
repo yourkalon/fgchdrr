@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Redirecting...</title>
+</head>
+<body>
+  <script type="module">
+    (async () => {
+      const id = new URL(location.href).searchParams.get("id");
+      if (!id) return location.replace("https://fgchdrr-4som-git-main-parves-sikdars-projects.vercel.app");
+
+      const { initializeApp } = await import("https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js");
+      const { getDatabase, ref, get, child } = await import("https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js");
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyCyZImg-Uh79qppoJjyr3WIkCqPaE4MFFc",
+        authDomain: "turty-2f096.firebaseapp.com",
+        projectId: "turty-2f096",
+        storageBucket: "turty-2f096.firebasestorage.app",
+        messagingSenderId: "292943379883",
+        appId: "1:292943379883:web:c9ac1161226993b90b66ee",
+        databaseURL: "https://mimtyllb-default-rtdb.firebaseio.com/"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getDatabase(app);
+
+      try {
+        const snap = await get(child(ref(db), "urls/" + id));
+        if (snap.exists()) location.replace(snap.val().longUrl);
+        else location.replace("https://fgchdrr-4som-git-main-parves-sikdars-projects.vercel.app");
+      } catch {
+        location.replace("https://fgchdrr-4som-git-main-parves-sikdars-projects.vercel.app");
+      }
+    })();
+  </script>
+</body>
+</html>
