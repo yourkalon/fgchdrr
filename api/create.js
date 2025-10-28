@@ -1,117 +1,63 @@
-import { db } from '../../lib/firebase.js';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+// Simple and clean version
+import { initializeApp } from "firebase/app";
+import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
 
-// Simple slug generator
-function generateSlug() {
-  return Math.random().toString(36).substring(2, 8);
-}
+// Firebase config - directly in code for testing
+const firebaseConfig = {
+  apiKey: "AIzaSyCyZImg-Uh79qppoJjyr3WIkCqPaE4MFFc",
+  authDomain: "turty-2f096.firebaseapp.com",
+  projectId: "turty-2f096",
+  storageBucket: "turty-2f096.firebasestorage.app",
+  messagingSenderId: "292943379883",
+  appId: "1:292943379883:web:c9ac1161226993b90b66ee"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 export default async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // Handle preflight
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+    return res.status(200).end();
   }
 
-  // Only POST allowed
   if (req.method !== 'POST') {
-    return res.status(405).json({ 
-      success: false,
-      error: 'Method not allowed' 
-    });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
     const { originalUrl, customSlug } = req.body;
 
-    // Validation
     if (!originalUrl) {
-      return res.status(400).json({
-        success: false,
-        error: 'URL is required'
-      });
+      return res.status(400).json({ error: 'URL is required' });
     }
 
-    // URL validation
-    let validUrl;
-    try {
-      validUrl = new URL(originalUrl);
-    } catch (error) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid URL. Please include http:// or https://'
-      });
-    }
-
-    let slug = customSlug || generateSlug();
-    
-    // Custom slug validation
-    if (customSlug) {
-      if (!/^[a-zA-Z0-9_-]+$/.test(customSlug)) {
-        return res.status(400).json({
-          success: false,
-          error: 'Slug can only contain letters, numbers, hyphens, and underscores'
-        });
-      }
-      
-      // Check if slug exists
-      try {
-        const existingDoc = await getDoc(doc(db, 'urls', customSlug));
-        if (existingDoc.exists()) {
-          return res.status(400).json({
-            success: false,
-            error: 'This short name is already taken'
-          });
-        }
-      } catch (dbError) {
-        console.error('Database check error:', dbError);
-        return res.status(500).json({
-          success: false,
-          error: 'Database connection failed'
-        });
-      }
-    }
+    // Generate slug
+    const slug = customSlug || Math.random().toString(36).substring(2, 8);
 
     // Save to Firestore
-    try {
-      await setDoc(doc(db, 'urls', slug), {
-        originalUrl: originalUrl,
-        slug: slug,
-        clicks: 0,
-        createdAt: new Date().toISOString(),
-        createdBy: 'web-user'
-      });
-    } catch (saveError) {
-      console.error('Save error:', saveError);
-      return res.status(500).json({
-        success: false,
-        error: 'Failed to save URL to database'
-      });
-    }
+    await setDoc(doc(db, 'urls', slug), {
+      originalUrl: originalUrl,
+      slug: slug,
+      clicks: 0,
+      createdAt: new Date().toISOString()
+    });
 
-    // Success response
-    const baseUrl = process.env.VERCEL_URL ? 
-      `https://${process.env.VERCEL_URL}` : 
-      'http://localhost:3000';
+    const shortUrl = `https://${process.env.VERCEL_URL || 'fgcbdrr.vercel.app'}/${slug}`;
 
     res.status(200).json({
       success: true,
-      shortUrl: `${baseUrl}/${slug}`,
+      shortUrl: shortUrl,
       slug: slug,
-      originalUrl: originalUrl,
-      message: 'URL shortened successfully!'
+      originalUrl: originalUrl
     });
 
   } catch (error) {
-    console.error('Unexpected error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Internal server error'
-    });
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Server error: ' + error.message });
   }
 }
