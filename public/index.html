@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turty URL Shortener</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .result {
+            margin-top: 25px;
+            padding: 20px;
+            background: #f0f9f0;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+            display: none;
+        }
+        
+        .error {
+            background: #ffeaea;
+            color: #d00;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            border-left: 4px solid #d00;
+        }
+        
+        .success {
+            background: #f0f9f0;
+            color: #28a745;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            border-left: 4px solid #28a745;
+        }
+        
+        .loading {
+            text-align: center;
+            margin: 15px 0;
+            display: none;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .short-url {
+            color: #667eea;
+            font-weight: bold;
+            word-break: break-all;
+            display: block;
+            margin: 10px 0;
+            font-size: 1.1em;
+        }
+        
+        .info {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 URL Shortener</h1>
+        <p class="subtitle">আপনার লিংক ছোট করুন মুহূর্তেই</p>
+        
+        <div class="error" id="errorMessage"></div>
+        <div class="success" id="successMessage"></div>
+        
+        <form id="urlForm">
+            <div class="form-group">
+                <label for="originalUrl">লং URL:</label>
+                <input 
+                    type="url" 
+                    id="originalUrl" 
+                    placeholder="https://example.com/very-long-url" 
+                    required
+                >
+                <div class="info">সম্পূর্ণ URL দিন (http:// বা https:// সহ)</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="customSlug">কাস্টম নাম (ঐচ্ছিক):</label>
+                <input 
+                    type="text" 
+                    id="customSlug" 
+                    placeholder="my-link"
+                >
+                <div class="info">ইংরেজি letters, numbers, hyphen (-), underscore (_) ব্যবহার করুন</div>
+            </div>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>শর্ট URL তৈরি হচ্ছে...</p>
+            </div>
+            
+            <button type="submit" id="submitBtn">
+                শর্ট URL তৈরি করুন
+            </button>
+        </form>
+        
+        <div class="result" id="result">
+            <h3>✅ সফলভাবে তৈরি হয়েছে!</h3>
+            <p><strong>মূল URL:</strong> <span id="originalUrlDisplay"></span></p>
+            <p><strong>শর্ট URL:</strong></p>
+            <a href="#" id="shortUrlDisplay" class="short-url" target="_blank"></a>
+            <p style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                লিংকটি ক্লিক করে টেস্ট করুন অথবা কপি করে শেয়ার করুন
+            </p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('urlForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const originalUrl = document.getElementById('originalUrl').value;
+            const customSlug = document.getElementById('customSlug').value;
+            const submitBtn = document.getElementById('submitBtn');
+            const errorDiv = document.getElementById('errorMessage');
+            const successDiv = document.getElementById('successMessage');
+            const resultDiv = document.getElementById('result');
+            const loadingDiv = document.getElementById('loading');
+            
+            // Reset states
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            resultDiv.style.display = 'none';
+            submitBtn.disabled = true;
+            loadingDiv.style.display = 'block';
+            
+            try {
+                console.log('Sending request...');
+                
+                const response = await fetch('/api/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        originalUrl: originalUrl,
+                        customSlug: customSlug || undefined
+                    })
+                });
+
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('API Response:', result);
+
+                if (result.success) {
+                    // Show success
+                    document.getElementById('originalUrlDisplay').textContent = result.originalUrl;
+                    document.getElementById('shortUrlDisplay').textContent = result.shortUrl;
+                    document.getElementById('shortUrlDisplay').href = result.shortUrl;
+                    resultDiv.style.display = 'block';
+                    
+                    successDiv.textContent = result.message || 'URL successfully shortened!';
+                    successDiv.style.display = 'block';
+                    
+                    // Reset form
+                    document.getElementById('urlForm').reset();
+                } else {
+                    // Show API error
+                    errorDiv.textContent = result.error || 'An error occurred';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                
+                if (error.name === 'TypeError') {
+                    errorDiv.textContent = 'নেটওয়ার্ক ত্রুটি: সার্ভারের সাথে সংযোগ করতে পারছি না। দয়া করে: 1. ইন্টারনেট সংযোগ চেক করুন 2. পৃষ্ঠাটি রিফ্রেশ করুন';
+                } else {
+                    errorDiv.textContent = 'ত্রুটি: ' + error.message;
+                }
+                errorDiv.style.display = 'block';
+            } finally {
+                submitBtn.disabled = false;
+                loadingDiv.style.display = 'none';
+            }
+        });
+
+        // Test connection on page load
+        window.addEventListener('load', () => {
+            console.log('URL Shortener loaded successfully');
+        });
+    </script>
+</body>
+</html>

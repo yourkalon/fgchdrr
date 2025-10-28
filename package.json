@@ -1,0 +1,12 @@
+{
+  "name": "turty-url-shortener",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "URL Shortener with Firebase Firestore",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "firebase": "^10.7.1"
+  }
+}
